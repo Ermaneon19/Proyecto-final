@@ -15,7 +15,7 @@ $(document).ready(function() {
                 ajax: true // Indicar que es una solicitud AJAX
             },
             success: function(response) {
-                var data = (response); // directamente ya es un array
+                var data = (response); // directamente ya es un array .
                 if (data.success) {
                     window.location.href = 'index.php';
                 } else {
