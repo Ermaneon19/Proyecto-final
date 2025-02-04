@@ -48,7 +48,8 @@ document.addEventListener('DOMContentLoaded', function() {
 $(document).ready(function() {
     $(".Select2").select2({
         placeholder: "Selecciona una opción",
-        allowClear: true
+        allowClear: true,
+        width: '100%'
     });
 });
 

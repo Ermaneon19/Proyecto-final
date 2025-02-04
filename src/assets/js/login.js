@@ -8,13 +8,14 @@ $(document).ready(function() {
         $.ajax({
             url: 'authentication-login.php',
             type: 'POST',
+            dataType: 'json',
             data: {
                 username: username,
                 password: password,
                 ajax: true // Indicar que es una solicitud AJAX
             },
             success: function(response) {
-                var data = JSON.parse(response);
+                var data = (response); // directamente ya es un array
                 if (data.success) {
                     window.location.href = 'index.php';
                 } else {
