@@ -18,10 +18,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['login_success_message'] = "Inicio de sesión exitoso.";
-        header("Location: index.php");
-        exit();
+
+        if (isset($_POST['ajax']) && $_POST['ajax'] == true) {
+            echo json_encode(['success' => true]);
+            exit();
+        } else {
+            header("Location: index.php");
+            exit();
+        }
     } else {
         $errorMessage = "Usuario o contraseña incorrectos.";
+        if (isset($_POST['ajax']) && $_POST['ajax'] == true) {
+            echo json_encode(['success' => false, 'message' => $errorMessage, 'username' => $username]);
+            exit();
+        }
     }
 }
 ?>
@@ -35,12 +45,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   <title>Iniciar sesion</title>
   <link rel="shortcut icon" type="image/png" href="../assets/images/logos/seodashlogo.png" />
   <link rel="stylesheet" href="src/assets/css/styles.min.css" />
+  <script src="src/assets/libs/jquery/dist/jquery.min.js"></script> <!-- Asegúrate de que jQuery se cargue primero -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="src/assets/js/login.js"></script>
 </head>
 
 <body>
   <!--  Body Wrapper -->
+  <div id="errorMessage" class="alert alert-danger" role="alert" style="display: none;"></div>
   <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
     data-sidebar-position="fixed" data-header-position="fixed">
     <div
@@ -62,20 +76,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
                   </div>
                 <?php endif; ?>
-                <form method="POST" action="">
-                  <div class="mb-3">
-                    <label for="exampleInputEmail1" class="form-label">Usuario</label>
-                    <input type="text" class="form-control" id="exampleInputEmail1" name="username" required>
-                  </div>
-                  <div class="mb-4">
-                    <label for="exampleInputPassword1" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="exampleInputPassword1" name="password" required minlength="8">
-                  </div>
-                  <button type="submit" class="btn btn-primary w-100 py-8 fs-4 mb-4">Iniciar Sesion</button>
-                  <div class="d-flex align-items-center justify-content-center">
-                    <p class="fs-4 mb-0 fw-bold">Eres nuevo en nuestro sistema?</p>
-                    <a class="text-primary fw-bold ms-2" href="./authentication-register.php">Crear una cuenta</a>
-                  </div>
+                <form id="loginForm" method="POST" action="">
+                    <div class="mb-3">
+                <label for="username" class="form-label">Usuario</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-4">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" name="password" required minlength="8">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-8 fs-4 mb-4">Iniciar Sesion</button>
+                    <div class="d-flex align-items-center justify-content-center">
+                <p class="fs-4 mb-0 fw-bold">Eres nuevo en nuestro sistema?</p>
+                <a class="text-primary fw-bold ms-2" href="./authentication-register.php">Crear una cuenta</a>
+                    </div>
                 </form>
               </div>
             </div>
@@ -85,7 +99,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
   </div>
 
-  <script src="src/assets/libs/jquery/dist/jquery.min.js"></script>
   <script src="src/assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
   <script src="src/assets/js/script.js"></script>

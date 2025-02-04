@@ -44,3 +44,11 @@ document.addEventListener('DOMContentLoaded', function() {
         closeErrorModalBtn.addEventListener('click', closeErrorModal);
     }
 });
+
+$(document).ready(function() {
+    $(".Select2").select2({
+        placeholder: "Selecciona una opción",
+        allowClear: true
+    });
+});
+

@@ -1,35 +1,30 @@
 <?php
-// Incluir la conexión a la base de datos
 include('db/db_connection.php');
-
-// Iniciar sesión para verificar si el usuario está logueado
+include('db/functions.php');
 session_start();
 
-// Verificar si el usuario está logueado
 if (!isset($_SESSION['user_id'])) {
     echo "Por favor, inicie sesión para editar su perfil.";
     exit();
 }
 
-// Obtener los datos actuales del usuario
 $userId = $_SESSION['user_id'];
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$userId]);
 $user = $stmt->fetch();
 
-// Obtener los intereses del usuario
 $stmt = $pdo->prepare("SELECT interest_id FROM user_interests WHERE user_id = ?");
 $stmt->execute([$userId]);
 $userInterests = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-// Actualizar los datos si el formulario fue enviado
+$interests = getInterests($pdo);
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['delete_account'])) {
     $newUsername = $_POST['username'];
     $newEmail = $_POST['email'];
     $newPassword = $_POST['password'];
     $newInterests = $_POST['interests'];
 
-    // Verificar si el nombre de usuario o el correo ya están en uso
     $stmt = $pdo->prepare("SELECT * FROM users WHERE (username = ? OR email = ?) AND id != ?");
     $stmt->execute([$newUsername, $newEmail, $userId]);
     $existingUser = $stmt->fetch();
@@ -37,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['delete_account'])) {
     if ($existingUser) {
         echo "El nombre de usuario o el correo ya están en uso.";
     } else {
-        // Actualizar la contraseña si se proporcionó una nueva
         if (!empty($newPassword) && strlen($newPassword) >= 8) {
             $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?");
@@ -47,14 +41,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['delete_account'])) {
             $stmt->execute([$newUsername, $newEmail, $userId]);
         }
 
-        // Eliminar los intereses anteriores del usuario
         $stmt = $pdo->prepare("DELETE FROM user_interests WHERE user_id = ?");
         $stmt->execute([$userId]);
 
-        // Insertar los nuevos intereses
         try {
             foreach ($newInterests as $interestId) {
-                // Comprobar si el interés ya existe en la tabla `interests`
                 $stmt = $pdo->prepare("SELECT id FROM interests WHERE id = ?");
                 $stmt->execute([$interestId]);
                 $interest = $stmt->fetch();
@@ -77,21 +68,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['delete_account'])) {
 
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Editar Perfil</title>
   <link rel="shortcut icon" type="image/png" href="../assets/images/logos/seodashlogo.png" />
   <link rel="stylesheet" href="src/assets/css/styles.min.css" />
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </head>
-
 <body>
   <!--  Body Wrapper -->
   <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
     data-sidebar-position="fixed" data-header-position="fixed">
-    <div
-      class="position-relative overflow-hidden radial-gradient min-vh-100 d-flex align-items-center justify-content-center">
+    <div class="position-relative overflow-hidden radial-gradient min-vh-100 d-flex align-items-center justify-content-center">
       <div class="d-flex align-items-center justify-content-center w-100">
         <div class="row justify-content-center w-100">
           <div class="col-md-8 col-lg-6 col-xxl-3">
@@ -113,13 +104,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['delete_account'])) {
                   </div>
                   <div class="mb-3">
                     <label for="interests" class="form-label">Intereses</label>
-                    <select class="form-control" id="interests" name="interests[]" multiple required>
-                      <option value="3" <?php echo in_array(3, $userInterests) ? 'selected' : ''; ?>>Arte</option>
-                      <option value="1" <?php echo in_array(1, $userInterests) ? 'selected' : ''; ?>>Deportes</option>
-                      <option value="2" <?php echo in_array(2, $userInterests) ? 'selected' : ''; ?>>Música</option>
-                      <option value="4" <?php echo in_array(4, $userInterests) ? 'selected' : ''; ?>>Tecnología</option>
+                    <select class="Select2" id="interests" name="interests[]" multiple required>
+                      <?php foreach ($interests as $interest): ?>
+                        <option value="<?php echo $interest['id']; ?>" <?php echo in_array($interest['id'], $userInterests) ? 'selected' : ''; ?>>
+                          <?php echo htmlspecialchars($interest['name']); ?>
+                        </option>
+                      <?php endforeach; ?>
                     </select>
                   </div>
+                  <script>
+                    $(document).ready(function() {
+                        $(".Select2").select2({
+                            placeholder: "Selecciona una opción",
+                            allowClear: true
+                        });
+                    });
+                  </script>
                   <button type="submit" class="btn btn-primary w-100 py-8 fs-4 mb-4">Actualizar Perfil</button>
                 </form>
                 <form method="POST" action="deleted_account.php">
@@ -136,9 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['delete_account'])) {
       </div>
     </div>
   </div>
-  <script src="src/assets/libs/jquery/dist/jquery.min.js"></script>
   <script src="src/assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
+  <script src="src/assets/js/script.js"></script>
 </body>
-
 </html>
